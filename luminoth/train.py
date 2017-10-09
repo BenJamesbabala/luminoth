@@ -8,8 +8,12 @@ import time
 from tensorflow.python import debug as tf_debug
 
 from luminoth.datasets import TFRecordDataset
-from luminoth.models import get_model
-from luminoth.utils.config import get_model_config
+from luminoth.models import (
+    get_model, DEFAULT_MODEL
+)
+from luminoth.utils.config import (
+    get_model_config, load_config
+)
 from luminoth.utils.hooks import ImageVisHook
 from luminoth.utils.training import (
     get_optimizer, clip_gradients_by_norm
@@ -29,7 +33,7 @@ def run(config_files, override_params, target='', cluster_spec=None,
     model_class = get_model(model_type)
 
     config = get_model_config(
-        model_class.base_config, config_file, override_params, **kwargs
+        model_class.base_config, custom_config, override_params,
     )
 
     if config.train.get('seed') is not None:
@@ -172,7 +176,7 @@ def run(config_files, override_params, target='', cluster_spec=None,
         try:
             while not coord.should_stop():
                 before = time.time()
-                _, train_loss, step, filename = sess.run([
+                (_, train_loss, step, filename) = sess.run([
                     train_op, total_loss, global_step, train_filename
                 ], options=run_options)
 
@@ -240,8 +244,7 @@ def train(config_files, override_params):
         return run(
             config_files=config_files, override_params=override_params,
             target=server.target, cluster_spec=cluster_spec,
-            is_chief=is_chief, job_name=job_name, task_index=task_index,
-            **kwargs
+            is_chief=is_chief, job_name=job_name, task_index=task_index
         )
 
 
